@@ -14,10 +14,14 @@ export const _afterPluginsLoaded = <T extends (...args: any[]) => any>(
 
   return async function (...args: Parameters<T>): Promise<Unpromisify<ReturnType<T>>> {
     if (!isPluginLoaded) {
-      // Плагин уже загружен через import в начале файла
-      // Проверяем, что он доступен
-      if (!window.cadesplugin) {
-        throw new Error('Не подключен модуль для работы с Cades plugin');
+      try {
+        require('../api/cadesplugin_api.js');
+      } catch (error) {
+        console.error(error);
+
+        throw new Error(
+          _extractMeaningfulErrorMessage(error) || 'Ошибка при подключении модуля для работы с Cades plugin',
+        );
       }
 
       isPluginLoaded = true;

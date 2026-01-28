@@ -7,7 +7,7 @@ const packageName = packageJson.name.split('/').pop() || packageJson.name;
 
 module.exports = {
   context: path.resolve(__dirname, 'src'),
-  entry: `./${packageName}.ts`,
+  entry: './crypto-pro.ts',
   module: {
     rules: [{
       test: /\.ts$/,
@@ -25,7 +25,7 @@ module.exports = {
   },
   output: {
     path: path.resolve(__dirname, tsConfig.compilerOptions.outDir),
-    filename: process.env.NODE_ENV === 'production' ? `${packageName}.min.js` : `${packageName}.js`,
+    filename: process.env.NODE_ENV === 'production' ? 'crypto-pro.min.js' : 'crypto-pro.js',
     libraryTarget: 'umd',
     library: 'cryptoPro',
     umdNamedDefine: true

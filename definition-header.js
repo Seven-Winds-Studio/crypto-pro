@@ -2,11 +2,7 @@ const path = require('path');
 const fs = require('fs');
 const tsConfig = require(`./${process.env.TS_CONFIG}`);
 const packageJson = require('./package.json');
-
-// Extract package name without scope (e.g., @scope/name -> name)
-const packageName = packageJson.name.split('/').pop() || packageJson.name;
-
-const typingsPath = path.resolve(__dirname, tsConfig.compilerOptions.outDir, `${packageName}.d.ts`);
+const typingsPath = path.resolve(__dirname, tsConfig.compilerOptions.outDir, 'crypto-pro.d.ts');
 const typings = fs.readFileSync(typingsPath, 'utf8');
 
 let header = [
