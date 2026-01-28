@@ -1,4 +1,4 @@
-name: Publish to npm
+name: Publish to GitHub Packages
 
 on:
   push:
@@ -21,7 +21,6 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '12.x'
-          registry-url: 'https://registry.npmjs.org'
 
       - name: Clean git working directory
         run: |
@@ -60,40 +59,44 @@ jobs:
           git tag "v$NEW_VERSION"
           git push origin publish --tags
 
-      - name: Check if version exists in npm
-        id: check_version_npm
+      - name: Configure npm for GitHub Packages
         run: |
-          EXISTING_VERSION=$(npm view crypto-pro@${NEW_VERSION} version 2>/dev/null || echo "")
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc
+
+      - name: Check if version exists in GitHub Packages
+        id: check_version_github
+        run: |
+          EXISTING_VERSION=$(npm view @seven-winds-studio/crypto-pro@${NEW_VERSION} versions --registry https://npm.pkg.github.com --json 2>/dev/null | grep ${NEW_VERSION} || echo "")
           if [ -n "$EXISTING_VERSION" ]; then
-            echo "Version ${NEW_VERSION} already exists in npm. Skipping publish."
-            echo "publish_npm=false" >> $GITHUB_ENV
+            echo "Version ${NEW_VERSION} already exists in GitHub Packages. Skipping publish."
+            echo "publish_github=false" >> $GITHUB_ENV
           else
-            echo "publish_npm=true" >> $GITHUB_ENV
+            echo "publish_github=true" >> $GITHUB_ENV
           fi
 
       - name: Install dependencies
-        if: env.publish_npm == 'true'
+        if: env.publish_github == 'true'
         run: |
           npm ci
 
       - name: Build package
-        if: env.publish_npm == 'true'
+        if: env.publish_github == 'true'
         run: |
           npm run build
 
-      - name: Publish to npm
-        if: env.publish_npm == 'true'
+      - name: Publish to GitHub Packages
+        if: env.publish_github == 'true'
         run: |
-          npm publish --access public
+          npm publish --registry=https://npm.pkg.github.com/
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish summary
         if: always()
         run: |
-          if [ "${{ env.publish_npm }}" == "true" ]; then
-            echo "✅ Successfully published crypto-pro@${NEW_VERSION} to npm"
-          elif [ "${{ env.publish_npm }}" == "false" ]; then
+          if [ "${{ env.publish_github }}" == "true" ]; then
+            echo "✅ Successfully published @seven-winds-studio/crypto-pro@${NEW_VERSION} to GitHub Packages"
+          elif [ "${{ env.publish_github }}" == "false" ]; then
             echo "⏭️  Version ${NEW_VERSION} already exists. Skipped publish."
           else
             echo "❌ Failed to publish"

@@ -34,7 +34,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Seven-Winds-Studio/crypto-pro"
+    "url": "https://github.com/Seven-Winds-Studio/crypto-pro.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
   },
   "author": {
     "name": "Vitalii Goma",
