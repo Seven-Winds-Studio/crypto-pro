@@ -1,0 +1,79 @@
+name: Publish GitHub Packages
+
+on:
+  push:
+    branches:
+      - publish
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '12.22.12'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Clean git working directory
+        run: |
+          git reset --hard || echo "No changes to reset"
+          git clean -fd || echo "No files to clean"
+
+      - name: Configure Git
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+      - name: Bump version
+        id: bump_version
+        run: |
+          # Uncomment the desired version bump type
+          npm version patch --no-git-tag-version
+          # npm version minor
+          # npm version major
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          echo "NEW_VERSION=${NEW_VERSION}" >> $GITHUB_ENV
+
+      - name: Commit and push changes
+        run: |
+          git add package.json package-lock.json README.md
+          git commit -m "Bump version to $NEW_VERSION"
+          git tag "v$NEW_VERSION"
+          git push origin publish --tags
+
+      - name: Configure npm for GitHub Packages
+        run: |
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc
+
+      - name: Check if version exists in GitHub Packages
+        id: check_version_github
+        run: |
+          EXISTING_VERSION=$(npm view @seven-winds-studio/crypto-pro versions --registry https://npm.pkg.github.com --json | grep ${NEW_VERSION} || true)
+          if [ -n "$EXISTING_VERSION" ]; then
+            echo "Version ${NEW_VERSION} already exists. Skipping publish."
+            echo "publishGH=false" >> $GITHUB_ENV
+          else
+            echo "publishGH=true" >> $GITHUB_ENV
+          fi
+
+      - name: Install dependencies
+        if: env.publishGH == 'true'
+        run: |
+          npm ci
+
+      - name: Build
+        if: env.publishGH == 'true'
+        run: |
+          npm run build
+
+      - name: Publish to GitHub Packages
+        if: env.publishGH == 'true'
+        run: |
+          npm publish --registry=https://npm.pkg.github.com/
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
