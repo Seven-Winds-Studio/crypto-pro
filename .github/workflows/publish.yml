@@ -43,8 +43,13 @@ jobs:
         run: |
           git add package.json package-lock.json README.md
           git commit -m "Bump version to $NEW_VERSION"
+          # Delete tag if it already exists (locally and remotely)
+          git tag -d "v$NEW_VERSION" 2>/dev/null || true
+          git push origin ":refs/tags/v$NEW_VERSION" 2>/dev/null || true
+          # Create and push new tag
           git tag "v$NEW_VERSION"
-          git push origin publish --tags
+          git push origin publish
+          git push origin "v$NEW_VERSION" --force || git push origin "v$NEW_VERSION"
 
       - name: Configure npm for GitHub Packages
         run: |
