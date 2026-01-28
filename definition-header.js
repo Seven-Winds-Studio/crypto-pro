@@ -2,7 +2,7 @@ const path = require('path');
 const fs = require('fs');
 const tsConfig = require(`./${process.env.TS_CONFIG}`);
 const packageJson = require('./package.json');
-const typingsPath = path.resolve(__dirname, tsConfig.compilerOptions.outDir, `${packageJson.name}.d.ts`);
+const typingsPath = path.resolve(__dirname, tsConfig.compilerOptions.outDir, 'crypto-pro.d.ts');
 const typings = fs.readFileSync(typingsPath, 'utf8');
 
 let header = [
