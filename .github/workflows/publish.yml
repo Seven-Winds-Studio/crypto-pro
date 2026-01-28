@@ -1,26 +1,22 @@
-name: Publish to GitHub Packages
+name: Publish GitHub Packages
 
 on:
   push:
     branches:
       - publish
-    tags:
-      - 'v*'
 
 jobs:
-  publish:
+  build:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '12.x'
+          node-version: '20.x'
 
       - name: Clean git working directory
         run: |
@@ -32,9 +28,8 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
 
-      - name: Bump version (only on branch push, not on tag)
+      - name: Bump version
         id: bump_version
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/')
         run: |
           # Uncomment the desired version bump type
           npm version patch --no-git-tag-version
@@ -42,20 +37,11 @@ jobs:
           # npm version major
           NEW_VERSION=$(node -p "require('./package.json').version")
           echo "NEW_VERSION=${NEW_VERSION}" >> $GITHUB_ENV
-          echo "VERSION_BUMPED=true" >> $GITHUB_ENV
 
-      - name: Get version from tag
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Commit and push changes
         run: |
-          VERSION_TAG=${GITHUB_REF#refs/tags/v}
-          echo "NEW_VERSION=${VERSION_TAG}" >> $GITHUB_ENV
-          echo "VERSION_BUMPED=false" >> $GITHUB_ENV
-
-      - name: Commit and push version changes
-        if: env.VERSION_BUMPED == 'true'
-        run: |
-          git add package.json package-lock.json
-          git commit -m "Bump version to $NEW_VERSION [skip ci]"
+          git add package.json package-lock.json README.md
+          git commit -m "Bump version to $NEW_VERSION"
           git tag "v$NEW_VERSION"
           git push origin publish --tags
 
@@ -66,38 +52,27 @@ jobs:
       - name: Check if version exists in GitHub Packages
         id: check_version_github
         run: |
-          EXISTING_VERSION=$(npm view @seven-winds-studio/crypto-pro@${NEW_VERSION} versions --registry https://npm.pkg.github.com --json 2>/dev/null | grep ${NEW_VERSION} || echo "")
+          EXISTING_VERSION=$(npm view @seven-winds-studio/react-trust-doc versions --registry https://npm.pkg.github.com --json | grep ${NEW_VERSION} || true)
           if [ -n "$EXISTING_VERSION" ]; then
-            echo "Version ${NEW_VERSION} already exists in GitHub Packages. Skipping publish."
-            echo "publish_github=false" >> $GITHUB_ENV
+            echo "Version ${NEW_VERSION} already exists. Skipping publish."
+            echo "publishGH=false" >> $GITHUB_ENV
           else
-            echo "publish_github=true" >> $GITHUB_ENV
+            echo "publishGH=true" >> $GITHUB_ENV
           fi
 
       - name: Install dependencies
-        if: env.publish_github == 'true'
+        if: env.publishGH == 'true'
         run: |
           npm ci
 
-      - name: Build package
-        if: env.publish_github == 'true'
+      - name: Build
+        if: env.publishGH == 'true'
         run: |
           npm run build
 
       - name: Publish to GitHub Packages
-        if: env.publish_github == 'true'
+        if: env.publishGH == 'true'
         run: |
           npm publish --registry=https://npm.pkg.github.com/
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Publish summary
-        if: always()
-        run: |
-          if [ "${{ env.publish_github }}" == "true" ]; then
-            echo "✅ Successfully published @seven-winds-studio/crypto-pro@${NEW_VERSION} to GitHub Packages"
-          elif [ "${{ env.publish_github }}" == "false" ]; then
-            echo "⏭️  Version ${NEW_VERSION} already exists. Skipped publish."
-          else
-            echo "❌ Failed to publish"
-          fi
