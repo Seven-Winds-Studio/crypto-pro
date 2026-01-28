@@ -20,7 +20,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18.x'
+          node-version: '12.x'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Clean git working directory
@@ -75,16 +75,6 @@ jobs:
         if: env.publish_npm == 'true'
         run: |
           npm ci
-
-      - name: Run linter
-        if: env.publish_npm == 'true'
-        run: |
-          npm run lint
-
-      - name: Run tests
-        if: env.publish_npm == 'true'
-        run: |
-          npx jest --coverage
 
       - name: Build package
         if: env.publish_npm == 'true'

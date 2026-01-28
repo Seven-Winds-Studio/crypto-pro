@@ -47,7 +47,11 @@ export const createAttachedSignature = _afterPluginsLoaded(
         let messageBase64;
 
         try {
-          messageBase64 = Buffer.from(unencryptedMessage).toString('base64');
+          if (typeof unencryptedMessage === 'string') {
+            messageBase64 = Buffer.from(unencryptedMessage).toString('base64');
+          } else {
+            messageBase64 = Buffer.from(unencryptedMessage).toString('base64');
+          }
         } catch (error) {
           console.error(error);
 
