@@ -1,0 +1,110 @@
+name: Publish to npm
+
+on:
+  push:
+    branches:
+      - publish
+    tags:
+      - 'v*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Clean git working directory
+        run: |
+          git reset --hard || echo "No changes to reset"
+          git clean -fd || echo "No files to clean"
+
+      - name: Configure Git
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+      - name: Bump version (only on branch push, not on tag)
+        id: bump_version
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/')
+        run: |
+          # Uncomment the desired version bump type
+          npm version patch --no-git-tag-version
+          # npm version minor
+          # npm version major
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          echo "NEW_VERSION=${NEW_VERSION}" >> $GITHUB_ENV
+          echo "VERSION_BUMPED=true" >> $GITHUB_ENV
+
+      - name: Get version from tag
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          VERSION_TAG=${GITHUB_REF#refs/tags/v}
+          echo "NEW_VERSION=${VERSION_TAG}" >> $GITHUB_ENV
+          echo "VERSION_BUMPED=false" >> $GITHUB_ENV
+
+      - name: Commit and push version changes
+        if: env.VERSION_BUMPED == 'true'
+        run: |
+          git add package.json package-lock.json
+          git commit -m "Bump version to $NEW_VERSION [skip ci]"
+          git tag "v$NEW_VERSION"
+          git push origin publish --tags
+
+      - name: Check if version exists in npm
+        id: check_version_npm
+        run: |
+          EXISTING_VERSION=$(npm view crypto-pro@${NEW_VERSION} version 2>/dev/null || echo "")
+          if [ -n "$EXISTING_VERSION" ]; then
+            echo "Version ${NEW_VERSION} already exists in npm. Skipping publish."
+            echo "publish_npm=false" >> $GITHUB_ENV
+          else
+            echo "publish_npm=true" >> $GITHUB_ENV
+          fi
+
+      - name: Install dependencies
+        if: env.publish_npm == 'true'
+        run: |
+          npm ci
+
+      - name: Run linter
+        if: env.publish_npm == 'true'
+        run: |
+          npm run lint
+
+      - name: Run tests
+        if: env.publish_npm == 'true'
+        run: |
+          npx jest --coverage
+
+      - name: Build package
+        if: env.publish_npm == 'true'
+        run: |
+          npm run build
+
+      - name: Publish to npm
+        if: env.publish_npm == 'true'
+        run: |
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish summary
+        if: always()
+        run: |
+          if [ "${{ env.publish_npm }}" == "true" ]; then
+            echo "✅ Successfully published crypto-pro@${NEW_VERSION} to npm"
+          elif [ "${{ env.publish_npm }}" == "false" ]; then
+            echo "⏭️  Version ${NEW_VERSION} already exists. Skipped publish."
+          else
+            echo "❌ Failed to publish"
+          fi

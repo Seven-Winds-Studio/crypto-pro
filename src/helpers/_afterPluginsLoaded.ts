@@ -1,4 +1,6 @@
 import { _extractMeaningfulErrorMessage } from './_extractMeaningfulErrorMessage';
+// Импортируем встроенный плагин вместо npm пакета
+import './cadesplugin_api.js';
 
 type Unpromisify<T> = T extends Promise<infer R> ? R : T;
 
@@ -12,14 +14,10 @@ export const _afterPluginsLoaded = <T extends (...args: any[]) => any>(
 
   return async function (...args: Parameters<T>): Promise<Unpromisify<ReturnType<T>>> {
     if (!isPluginLoaded) {
-      try {
-        require('cadesplugin_api.js');
-      } catch (error) {
-        console.error(error);
-
-        throw new Error(
-          _extractMeaningfulErrorMessage(error) || 'Ошибка при подключении модуля для работы с Cades plugin',
-        );
+      // Плагин уже загружен через import в начале файла
+      // Проверяем, что он доступен
+      if (!window.cadesplugin) {
+        throw new Error('Не подключен модуль для работы с Cades plugin');
       }
 
       isPluginLoaded = true;
