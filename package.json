@@ -1,5 +1,5 @@
 {
-  "name": "crypto-pro",
+  "name": "@seven-winds-studio/crypto-pro",
   "version": "3.0.8",
   "description": "API для взаимодействия с КриптоПро",
   "main": "./lib/crypto-pro.js",
@@ -34,7 +34,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/vgoma/crypto-pro"
+    "url": "https://github.com/Seven-Winds-Studio/crypto-pro"
   },
   "author": {
     "name": "Vitalii Goma",
