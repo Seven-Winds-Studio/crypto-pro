@@ -30,9 +30,7 @@
     "examples-update:angular": "npm --prefix ./examples/angular r crypto-pro && npm --prefix ./examples/angular i crypto-pro",
     "examples-update:react": "npm --prefix ./examples/react r crypto-pro && npm --prefix ./examples/react i crypto-pro",
     "prepack": "npm run build",
-    "postpack": "npm run pack:uncompress && npm run pack:clean",
-    "prepublishOnly": "npm run build",
-    "postpublish": "npm run examples-update"
+    "prepublishOnly": "npm run build"
   },
   "repository": {
     "type": "git",
