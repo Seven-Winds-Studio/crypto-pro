@@ -1,6 +1,6 @@
 {
-  "name": "crypto-pro",
-  "version": "3.0.1",
+  "name": "@seven-winds-studio/crypto-pro",
+  "version": "3.0.13",
   "description": "API для взаимодействия с КриптоПро",
   "main": "./lib/crypto-pro.js",
   "types": "./lib/crypto-pro.d.ts",
@@ -30,13 +30,14 @@
     "examples-update:angular": "npm --prefix ./examples/angular r crypto-pro && npm --prefix ./examples/angular i crypto-pro",
     "examples-update:react": "npm --prefix ./examples/react r crypto-pro && npm --prefix ./examples/react i crypto-pro",
     "prepack": "npm run build",
-    "postpack": "npm run pack:uncompress && npm run pack:clean",
-    "prepublishOnly": "npm run lint && jest && npm run build",
-    "postpublish": "npm run examples-update"
+    "prepublishOnly": "npm run build"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/vgoma/crypto-pro"
+    "url": "https://github.com/Seven-Winds-Studio/crypto-pro.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
   },
   "author": {
     "name": "Vitalii Goma",
@@ -53,7 +54,7 @@
   ],
   "license": "MIT",
   "engines": {
-    "node": ">=18.x"
+    "node": ">=12.x"
   },
   "devDependencies": {
     "@types/jest": "29.5.12",
